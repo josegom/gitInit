@@ -43,11 +43,11 @@ object Main extends App {
 
 
   println("start")
-  val solution = repositories.map(project => Project(project, createPullRequest(project)))
+  val solution: Seq[Project] = repositories.map(project => Project(project, createPullRequest(project)))
   val groupBy: Seq[Map[Person, Seq[Option[PullRequest]]]] = solution.map(p => p.pr.groupBy(_.get.creator))
   println("-------------------------------------------")
   println(write(solution))
-  println(groupBy.map (x => s"<tr><td>${x.map(y=> s"<td>${y._1.name}</td>${y._2.map(pr => if (pr.isDefined) s"<tr>${pr.get.toHtml}</tr>")}")}").mkString(""))
+  println(groupBy.map(x => s"<tr>${x.map(y => s"<td>${y._1.name}</td>${y._2.map(pr => if (pr.isDefined) s"${pr.get.toHtml}").mkString("")}").mkString("")}</tr>").mkString(""))
   println(solution.map(_.toHtml))
   shutdown()
 
@@ -56,7 +56,7 @@ object Main extends App {
     val pullRequest = Await.result[HttpResponse](executeRest(projectURl), 5 minute)
     val allPr: Seq[PRDTO] = parse(pullRequest.entity.data.asString).extract[Seq[PRDTO]]
     allPr.map(pr => {
-      if (pr.head != null && pr.head.repo!=null && pr.head.repo.owner!=null)
+      if (pr.head != null && pr.head.repo != null && pr.head.repo.owner != null)
         Some(PullRequest(pr.title, pr.id, pr.number, pr.head.repo.created_at, pr.head.repo.updated_at, Person(pr.head.repo.owner.login), createCommends(pr)))
       else None
     }
@@ -81,7 +81,7 @@ object Main extends App {
   def createCommends(pr: PRDTO): Seq[Person] = {
     val review_coments = Await.result[HttpResponse](executeRest(s"${pr.review_comments_url}"), 5 minute)
     val comments = Await.result[HttpResponse](executeRest(s"${pr.comments_url}"), 5 minute)
-    val allComents = parse(review_coments.entity.data.asString).extract[Seq[CommentDTO]] ++  parse(comments.entity.data.asString).extract[Seq[CommentDTO]]
+    val allComents = parse(review_coments.entity.data.asString).extract[Seq[CommentDTO]] ++ parse(comments.entity.data.asString).extract[Seq[CommentDTO]]
     allComents.map(
       comment => Person(comment.user.login)
     )
@@ -90,7 +90,7 @@ object Main extends App {
 }
 
 
-case class PRDTO(url: String, title: String, review_comments_url: String,  comments_url: String, head: HeadDto, id: String, number: String)
+case class PRDTO(url: String, title: String, review_comments_url: String, comments_url: String, head: HeadDto, id: String, number: String)
 
 case class HeadDto(repo: RepoDTO)
 
